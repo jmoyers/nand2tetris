@@ -1,0 +1,71 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/01/Or.hdl
+
+ /**
+ * Or gate:
+ * out = 1 if (a == 1 or b == 1)
+ *       0 otherwise
+ */
+
+// NAND
+// AND
+// NOT
+
+// 0 0 0
+// 1 0 1 - a & ~b
+// 0 1 1 - ~a & b
+// 1 1 1 - a & b
+//
+// 0 0 0
+// 1 0 1
+// 0 1 0
+// 1 1 1
+//
+//
+// Composite:
+// (a * ~b) + (~a * b) + (a * b)
+//
+// Simplify first and last term
+// (a * ~b) + (a * b)
+// a (1 * ~b + 1 * b)
+// a (~b + b)
+// a
+//
+// What is left...
+// a + ~a * b
+//
+// DeMorgan's law to get rid of the or...
+// x = a
+// y = ~a * b
+// ~(~a * ~(~a * b))     <-- impl 1
+// NAND(~a, NAND(~a, b)) <-- impl 2, through intuition (nand = not and)
+// 
+// Not sure how to simplify further, but looking it up:
+// NAND(~a, ~b)          <-- impl 3
+//
+// So this means NAND(~a, b) = ~b?
+
+CHIP Or {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    // Impl 1 - works
+    // Not(in=a, out=notA);
+    // And(a=notA, b=b, out=notAAndb);
+    // Not(in=notAAndb, out=notNotAAndB);
+    // And(a=notA, b=notNotAAndB, out=t);
+    // Not(in=t, out=out);
+    
+    // Impl 2 - works
+    // Not(in=a, out=notA);
+    // Nand(a=notA, b=b, out=notANandB);
+    // Nand(a=notA, b=notANandB, out=out);
+
+    // Impl 3 - works
+    Not(in=a, out=notA);
+    Not(in=b, out=notB);
+    Nand(a=notA, b=notB, out=out);
+}

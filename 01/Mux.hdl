@@ -1,0 +1,73 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/01/Mux.hdl
+
+/** 
+ * Multiplexor:
+ * out = a if sel == 0
+ *       b otherwise
+ */
+
+// NAND
+// AND
+// NOT
+// OR
+// XOR
+// |   a   |   b   |  sel  |  out  |
+// |   0   |   0   |   0   |   0   |
+// |   0   |   0   |   1   |   0   |
+// |   0   |   1   |   0   |   0   |
+// |   0   |   1   |   1   |   1   | - ~a * b * s
+// |   1   |   0   |   0   |   1   | - a * ~b * ~s
+// |   1   |   0   |   1   |   0   |
+// |   1   |   1   |   0   |   1   | - a * b * ~s
+// |   1   |   1   |   1   |   1   | - a * b * s
+//
+// (a * b * s) + (a * b * ~s) + (a * ~b * ~s) + (~a * b * s) <-- impl 1, works
+//
+// First 2 terms
+// ab
+//
+// ab + (a * ~b * ~s) + (~a * b * s)
+
+CHIP Mux {
+    IN a, b, sel;
+    OUT out;
+
+    PARTS:
+    // impl 1 - 13 gates
+    // Not(in=a, out=notA);
+    // Not(in=b, out=notB);
+    // Not(in=sel, out=notSel);
+
+    // And(a=a, b=b, out=aAndB);
+    // And(a=aAndB, b=sel, out=t1);
+
+    // And(a=aAndB, b=notSel, out=t2);
+
+    // And(a=a, b=notB, out=aAndNotB);
+    // And(a=aAndNotB, b=notSel, out=t3);
+
+    // And(a=notA, b=b, out=notAAndB);
+    // And(a=notAAndB, b=sel, out=t4);
+
+    // Or(a=t1, b=t2, out=z1);
+    // Or(a=z1, b=t3, out=z2);
+    // Or(a=z2, b=t4, out=out);
+
+    // impl 2 - 10 gates
+    And(a=a, b=b, out=aAndB);
+    
+    Not(in=b, out=notB);
+    Not(in=sel, out=notSel);
+    And(a=a, b=notB, out=aAndNotB);
+    And(a=aAndNotB, b=notSel, out=t2);
+
+    Not(in=a, out=notA);
+    And(a=notA, b=b, out=notAAndB);
+    And(a=notAAndB, b=sel, out=t3);
+
+    Or(a=aAndB, b=t2, out=z1);
+    Or(a=z1, b=t3, out=out);
+}
