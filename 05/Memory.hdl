@@ -1,0 +1,85 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/05/Memory.hdl
+
+/**
+ * The complete address space of the Hack computer's memory,
+ * including RAM and memory-mapped I/O. 
+ * The chip facilitates read and write operations, as follows:
+ *     Read:  out(t) = Memory[address(t)](t)
+ *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
+ * In words: the chip always outputs the value stored at the memory 
+ * location specified by address. If load==1, the in value is loaded 
+ * into the memory location specified by address. This value becomes 
+ * available through the out output from the next time step onward.
+ * Address space rules:
+ * Only the upper 16K+8K+1 words of the Memory chip are used. 
+ * Access to address>0x6000 is invalid. Access to any address in 
+ * the range 0x4000-0x5FFF results in accessing the screen memory 
+ * map. Access to address 0x6000 results in accessing the keyboard 
+ * memory map. The behavior in these addresses is described in the 
+ * Screen and Keyboard chip specifications given in the book.
+ */
+
+CHIP Memory {
+    IN in[16], load, address[15];
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+    // 16k = memory - we've built this, RAM16k
+    // 8k = screen - built in
+    // 1 = keyboard - built in
+    //
+    // 15 bit address
+    // 0b001111111111111 (13 bits) = 8191
+    // 0b011111111111111 (14 bits) = 16383
+    // 0b111111111111111 (15 bits) = 32767
+    //
+    // 0 -> 16383 = RAM
+    // 8192 + 16383 = 16834 -> 24575 = Screen
+    // 24575 + 1 = 24576 = Keyboard 
+    //
+    // Keyboard = 0110 0000 0000 0000
+    //
+    // 3 potential outputs
+    // Will mux them together with load bits for each
+    // to get one output for all of ram
+
+    // If the last address bit is set, its in the device memory
+    Not(in=address[14], out=isRam);
+
+    // If its device memory, keyboard is one particular address
+    // 0110 0000 0000 0000, lets check bottom bits
+    Or8Way(in=address[0..7], out=dev1);
+    Or(a=dev1, b=address[8], out=dev2);
+    Or(a=dev2, b=address[9], out=dev3);
+    Or(a=dev3, b=address[10], out=dev4);
+    Or(a=dev4, b=address[11], out=dev5);
+    Or(a=dev5, b=address[12], out=dev6);
+    Not(in=dev6, out=dev7);
+    And(a=dev7, b=address[13], out=dev8);
+    And(a=dev8, b=address[14], out=isKeyboard);
+
+    // If its not ram and not keyboard, its screen
+    Or(a=isKeyboard, b=isRam, out=isNotScreen);
+    Not(in=isNotScreen, out=isScreen);
+
+    // Now lets figure out if the load bit is set for the device
+    And(a=load, b=isRam, out=rLoad);
+    And(a=load, b=isScreen, out=sLoad);
+    And(a=load, b=isKeyboard, out=kLoad);
+    
+    // Now compute the address per chip
+    // Screen = just take the first 13 bits (-16834 offset, which makes sense)
+    // Ram requires no offset (we'll mux it away if ram is not selected)
+    //   11 1111 1111 1111 - 14 bits
+    // Keyboard is one register, so we'll mux it away if not selected also
+    RAM16K(in=in, load=rLoad, address=address[0..13], out=rOut);
+    Screen(in=in, load=sLoad, address=address[0..12], out=sOut);
+    Keyboard(out=kOut);
+
+    Mux16(a=sOut, b=rOut, sel=isRam, out=t1);
+    Mux16(a=t1, b=kOut, sel=isKeyboard, out=out);
+}
