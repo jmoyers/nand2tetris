@@ -162,10 +162,11 @@ impl<'a> Parser<'a> {
 
   fn get_addr(&self) -> String {
     let mut command : String  = String::with_capacity(16);
+    let length = self.addr.len() - 1;
     let mut total : u16 = 0;
 
     for (i, c) in self.addr.chars().enumerate() {
-      total += (c as u16 - 48) * 10u16.pow(i as u32);
+      total += (c as u16 - 48) * 10u16.pow(length as u32 - i as u32);
     }
 
     while total > 0 {
